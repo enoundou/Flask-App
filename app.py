@@ -1,12 +1,75 @@
-from flask import Flask
+import json
+import os
+
+from flask import Flask, render_template, request, redirect, url_for
+
+FILENAME = "data/blog_posts.json"
 
 app = Flask(__name__)
 
 
+def load_data(file_path):
+    """Loads a JSON file"""
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+
+    return []  # or {} depending on your use case
+
+
+def write_data(file_path, data):
+  """ write into a JSON file """
+  os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+  with open(file_path, "w", encoding="utf-8") as handle:
+    json.dump(data, handle, indent=2)
+
+
 @app.route('/')
-def hello_world():
-    return 'Hello, World!'
+def index():
+    """Renders the home page"""
+    blog_posts = load_data(FILENAME)
+    return render_template('index.html', posts=blog_posts)
+
+
+@app.route('/add', methods=['GET', 'POST'])
+def add():
+    if request.method == 'POST':
+        author = request.form['author']
+        title = request.form['title']
+        content = request.form['content']
+        blog_posts = load_data(FILENAME)
+        id_post = len(blog_posts) + 1
+        blog_posts.append({"id": id_post, "author": author, "title": title, "content": content})
+        write_data(file_path=FILENAME, data=blog_posts)
+
+        return redirect(url_for('index'))
+    return render_template('add.html')
+
+
+@app.route('/delete/<int:post_id>', methods=['POST'])
+def delete(post_id):
+    blog_posts = load_data(FILENAME)
+    blog_posts = [post for post in blog_posts if post["id"] != post_id]
+
+    for i, post in enumerate(blog_posts, start=1):
+        post["id"] = i
+
+    write_data(file_path=FILENAME, data=blog_posts)
+
+    return redirect(url_for('index'))
+
+
+def main():
+    blog_posts = [
+        {"id": 1, "author": "John Doe", "title": "First Post", "content": "This is my first post."},
+        {"id": 2, "author": "Jane Doe", "title": "Second Post", "content": "This is another post."}
+    # More blog posts can go here...
+    ]
+    write_data(file_path=FILENAME, data=blog_posts)
+
+    app.run(host="0.0.0.0", port=5000, debug=True)
 
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    main()
