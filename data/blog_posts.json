@@ -1,8 +1,14 @@
 [
   {
     "id": 1,
-    "author": "eli",
-    "title": "teste",
-    "content": "hjkjbk\r\n\r\n"
+    "author": "John Doe",
+    "title": "First Post",
+    "content": "This is my first post."
+  },
+  {
+    "id": 2,
+    "author": "Jane Doe",
+    "title": "Second Post",
+    "content": "This is another post."
   }
 ]
