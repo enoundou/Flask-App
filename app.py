@@ -9,7 +9,11 @@ app = Flask(__name__)
 
 
 def load_data(file_path):
-    """Loads a JSON file"""
+    """
+    Loads a JSON file
+    :param file_path: path to file
+    :return: blog_posts
+    """
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as handle:
             return json.load(handle)
@@ -18,11 +22,14 @@ def load_data(file_path):
 
 
 def write_data(file_path, data):
-  """ write into a JSON file """
-  os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    """ write into a JSON file
+    :param file_path: path to file
+    :param data: data to write
+    """
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-  with open(file_path, "w", encoding="utf-8") as handle:
-    json.dump(data, handle, indent=2)
+    with open(file_path, "w", encoding="utf-8") as handle:
+        json.dump(data, handle, indent=2)
 
 
 @app.route('/')
@@ -34,6 +41,10 @@ def index():
 
 @app.route('/add', methods=['GET', 'POST'])
 def add():
+    """
+    adds a new blog_post
+    :return: home page for POST, add page for GET
+    """
     if request.method == 'POST':
         author = request.form['author']
         title = request.form['title']
@@ -49,6 +60,11 @@ def add():
 
 @app.route('/delete/<int:post_id>', methods=['POST'])
 def delete(post_id):
+    """
+    deletes a blog_post
+    :param post_id: post id to delete
+    :return: redirect to home page
+    """
     blog_posts = load_data(FILENAME)
     blog_posts = [post for post in blog_posts if post["id"] != post_id]
 
@@ -61,13 +77,25 @@ def delete(post_id):
 
 
 def fetch_post_by_id(post_id, posts):
+    """
+    fetches a blog_post
+    :param post_id: post id to fetch
+    :param posts: posts to fetch
+    :return: post
+    """
     for post in posts:
         if post["id"] == post_id:
             return post
     return None
 
+
 @app.route('/update/<int:post_id>', methods=['GET', 'POST'])
 def update(post_id):
+    """
+    updates a blog_post
+    :param post_id: post id to update
+    :return: redirect to home page for POST, update page for GET
+    """
     # Fetch the blog posts from the JSON file
     blog_posts = load_data(FILENAME)
     post = fetch_post_by_id(post_id, blog_posts)
@@ -98,10 +126,13 @@ def update(post_id):
 
 
 def main():
+    """
+    main function
+    """
     blog_posts = [
         {"id": 1, "author": "John Doe", "title": "First Post", "content": "This is my first post."},
         {"id": 2, "author": "Jane Doe", "title": "Second Post", "content": "This is another post."}
-    # More blog posts can go here...
+        # More blog posts can go here...
     ]
     write_data(file_path=FILENAME, data=blog_posts)
 
