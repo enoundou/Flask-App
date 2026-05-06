@@ -92,9 +92,9 @@ def update(post_id):
 
     if request.method == 'POST':
 
-        author = request.form.get('author')
-        title = request.form.get('title')
-        content = request.form.get('content')
+        author = request.form.get('author').strip()
+        title = request.form.get('title').strip()
+        content = request.form.get('content').strip()
         for post in blog_posts:
             if post["id"] == post_id:
                 post["author"] = author
