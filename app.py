@@ -1,41 +1,26 @@
-import json
-import os
-
 from flask import Flask, render_template, request, redirect, url_for
-
-FILENAME = "data/blog_posts.json"
+from database import load_data, write_data
 
 app = Flask(__name__)
 
 
-def load_data(file_path):
+def format_post_content(content):
     """
-    Loads a JSON file
-    :param file_path: path to file
-    :return: blog_posts
+    Converts line breaks into HTML <br/> tags
+    :param content: raw post content
+    :return: formatted HTML content
     """
-    if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as handle:
-            return json.load(handle)
-
-    return []  # or {} depending on your use case
-
-
-def write_data(file_path, data):
-    """ write into a JSON file
-    :param file_path: path to file
-    :param data: data to write
-    """
-    os.makedirs(os.path.dirname(file_path), exist_ok=True)
-
-    with open(file_path, "w", encoding="utf-8") as handle:
-        json.dump(data, handle, indent=2)
+    return content.replace("\r\n", "<br/>").replace("\n", "<br/>")
 
 
 @app.route('/')
 def index():
     """Renders the home page"""
-    blog_posts = load_data(FILENAME)
+    blog_posts = load_data()
+
+    for post in blog_posts:
+        post["content"] = format_post_content(post["content"])
+
     return render_template('index.html', posts=blog_posts)
 
 
@@ -46,13 +31,18 @@ def add():
     :return: home page for POST, add page for GET
     """
     if request.method == 'POST':
-        author = request.form['author']
-        title = request.form['title']
-        content = request.form['content']
-        blog_posts = load_data(FILENAME)
-        id_post = len(blog_posts) + 1
+        author = request.form['author'].strip()
+        title = request.form['title'].strip()
+        content = request.form['content'].strip()
+        blog_posts = load_data()
+
+        if blog_posts:
+            id_post = max(post["id"] for post in blog_posts) + 1
+        else:
+            id_post = 1
+
         blog_posts.append({"id": id_post, "author": author, "title": title, "content": content})
-        write_data(file_path=FILENAME, data=blog_posts)
+        write_data(data=blog_posts)
 
         return redirect(url_for('index'))
     return render_template('add.html')
@@ -65,13 +55,10 @@ def delete(post_id):
     :param post_id: post id to delete
     :return: redirect to home page
     """
-    blog_posts = load_data(FILENAME)
+    blog_posts = load_data()
     blog_posts = [post for post in blog_posts if post["id"] != post_id]
 
-    for i, post in enumerate(blog_posts, start=1):
-        post["id"] = i
-
-    write_data(file_path=FILENAME, data=blog_posts)
+    write_data(data=blog_posts)
 
     return redirect(url_for('index'))
 
@@ -97,7 +84,7 @@ def update(post_id):
     :return: redirect to home page for POST, update page for GET
     """
     # Fetch the blog posts from the JSON file
-    blog_posts = load_data(FILENAME)
+    blog_posts = load_data()
     post = fetch_post_by_id(post_id, blog_posts)
     if post is None:
         # Post not found
@@ -116,7 +103,7 @@ def update(post_id):
                 break
 
         # Update the post in the JSON file
-        write_data(file_path=FILENAME, data=blog_posts)
+        write_data(data=blog_posts)
         # Redirect back to index
         return redirect(url_for('index'))
 
@@ -134,7 +121,7 @@ def main():
         {"id": 2, "author": "Jane Doe", "title": "Second Post", "content": "This is another post."}
         # More blog posts can go here...
     ]
-    write_data(file_path=FILENAME, data=blog_posts)
+    write_data(data=blog_posts)
 
     app.run(host="0.0.0.0", port=5000, debug=True)
 
